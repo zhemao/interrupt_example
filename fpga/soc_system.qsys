@@ -567,13 +567,6 @@
    end="user_input_device_0.interrupt_sender">
   <parameter name="irqNumber" value="0" />
  </connection>
- <connection
-   kind="interrupt"
-   version="13.1"
-   start="hps_0.f2h_irq1"
-   end="user_input_device_0.interrupt_sender">
-  <parameter name="irqNumber" value="0" />
- </connection>
  <interconnectRequirement for="$system" name="qsys_mm.clockCrossingAdapter" value="HANDSHAKE" />
  <interconnectRequirement for="$system" name="qsys_mm.maxAdditionalLatency" value="1" />
  <interconnectRequirement for="$system" name="qsys_mm.insertDefaultSlave" value="false" />
