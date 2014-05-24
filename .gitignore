@@ -35,6 +35,7 @@ Module.symvers
 .tmp_versions
 
 *.ver
+*.smsg
 
 /fpga/db
 /fpga/simulation
