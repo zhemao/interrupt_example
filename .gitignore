@@ -48,3 +48,5 @@ Module.symvers
 /fpga/hps_sdram_p0_all_pins.txt
 /fpga/hps_sdram_p0_summary.csv
 /fpga/soc_system/synthesis
+
+/software/readstate
