@@ -49,4 +49,4 @@ Module.symvers
 /fpga/hps_sdram_p0_summary.csv
 /fpga/soc_system/synthesis
 
-/software/readstate
+/software/userspace/readstate

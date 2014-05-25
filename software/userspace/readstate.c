@@ -6,51 +6,60 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
-#define DEVICE_FILE "/dev/mem"
-#define DEVICE_OFFSET 0xff200000
-#define PAGE_SIZE sysconf(_SC_PAGESIZE)
+#define SYSFS_FILE "/sys/bus/platform/drivers/fpga_uinput/fpga_uinput"
+#define NUM_SWITCHES 4
+#define NUM_KEYS 4
+
+void print_state_change(uint8_t cur_state, uint8_t last_state)
+{
+	uint8_t changed = cur_state ^ last_state;
+	int i;
+
+	for (i = 0; i < NUM_SWITCHES; i++) {
+		if (!((changed >> i) & 1))
+			continue;
+		if ((cur_state >> i) & 1)
+			printf("switch %d flipped up\n", i);
+		else
+			printf("switch %d flipped down\n", i);
+	}
+
+	for (i = 0; i < NUM_KEYS; i++) {
+		int shift = NUM_SWITCHES + i;
+
+		if (!((changed >> shift) & 1))
+			continue;
+		if ((cur_state >> shift) & 1)
+			printf("key %d released\n", i);
+		else
+			printf("key %d pushed\n", i);
+	}
+}
 
 int main(void) {
-	volatile uint8_t *user_inputs_mem;
-	uint8_t user_inputs;
-	int fd, i;
+	FILE *f;
+	uint8_t last_state = 0xf0;
+	int ret;
 
-	fd = open(DEVICE_FILE, O_RDONLY);
-	if (fd < 0) {
-		perror("open");
-		return EXIT_FAILURE;
+	for (;;) {
+		uint8_t cur_state;
+		f = fopen(SYSFS_FILE, "r");
+		if (f == NULL) {
+			perror("fopen");
+			return EXIT_FAILURE;
+		}
+		ret = fread(&cur_state, 1, 1, f);
+		fclose(f);
+		if (ret != 1) {
+			if (errno == EAGAIN)
+				continue;
+			return EXIT_FAILURE;
+		}
+		print_state_change(cur_state, last_state);
+		last_state = cur_state;
 	}
-
-	user_inputs_mem = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_PRIVATE,
-			fd, DEVICE_OFFSET);
-
-	if (user_inputs_mem == MAP_FAILED) {
-		perror("mmap");
-		close(fd);
-		return EXIT_FAILURE;
-	}
-
-	user_inputs = *user_inputs_mem;
-
-	for (i = 0; i < 4; i++) {
-		int state = (user_inputs >> i) & 0x1;
-		if (state)
-			printf("Switch %d is up\n", i);
-		else
-			printf("Switch %d is down\n", i);
-	}
-
-	for (i = 0; i < 4; i++) {
-		int state = (user_inputs >> (i + 4)) & 0x1;
-		if (state)
-			printf("Key %d is up\n", i);
-		else
-			printf("Key %d is down\n", i);
-	}
-
-	munmap((void *) user_inputs_mem, PAGE_SIZE);
-	close(fd);
 
 	return 0;
 }
