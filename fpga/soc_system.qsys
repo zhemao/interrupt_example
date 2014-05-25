@@ -24,7 +24,7 @@
    {
       datum _sortIndex
       {
-         value = "2";
+         value = "1";
          type = "int";
       }
    }
@@ -32,7 +32,7 @@
    {
       datum _sortIndex
       {
-         value = "1";
+         value = "2";
          type = "int";
       }
    }
@@ -68,13 +68,6 @@
   <parameter name="clockFrequencyKnown" value="true" />
   <parameter name="inputClockFrequency" value="0" />
   <parameter name="resetSynchronousEdges" value="NONE" />
- </module>
- <module
-   kind="user_input_device"
-   version="1.0"
-   enabled="1"
-   name="user_input_device_0">
-  <parameter name="AUTO_CLOCK_CLOCK_RATE" value="50000000" />
  </module>
  <module kind="altera_hps" version="13.1" enabled="1" name="hps_0">
   <parameter name="MEM_VENDOR" value="JEDEC" />
@@ -536,6 +529,16 @@
   <parameter name="quartus_ini_hps_ip_enable_bsel_csel" value="false" />
   <parameter name="quartus_ini_hps_ip_f2sdram_bonding_out" value="false" />
  </module>
+ <module
+   kind="user_input_device"
+   version="1.0"
+   enabled="1"
+   name="user_input_device_0" />
+ <connection
+   kind="clock"
+   version="13.1"
+   start="clk_0.clk"
+   end="hps_0.h2f_lw_axi_clock" />
  <connection
    kind="clock"
    version="13.1"
@@ -555,11 +558,6 @@
   <parameter name="baseAddress" value="0x0000" />
   <parameter name="defaultConnection" value="false" />
  </connection>
- <connection
-   kind="clock"
-   version="13.1"
-   start="clk_0.clk"
-   end="hps_0.h2f_lw_axi_clock" />
  <connection
    kind="interrupt"
    version="13.1"

@@ -5,7 +5,8 @@ reg reset;
 reg [3:0] keys;
 reg [3:0] switches;
 
-wire avl_irq_n;
+reg  avl_read;
+wire avl_irq;
 wire avl_readdata;
 
 user_input_device uinput (
@@ -13,7 +14,8 @@ user_input_device uinput (
     .reset (reset),
     .keys (keys),
     .switches (switches),
-    .avl_irq_n (avl_irq_n),
+    .avl_irq (avl_irq),
+    .avl_read (avl_read),
     .avl_readdata (avl_readdata)
 );
 
@@ -22,23 +24,34 @@ always #10000 clk = !clk;
 initial begin
     keys = 4'b1111;
     switches = 4'b0000;
+    avl_read = 1'b0;
     reset = 1'b1;
     #20000 reset = 1'b0;
-    assert (avl_irq_n);
+    assert (!avl_irq);
 
     switches = 4'b0001;
-    #20000 assert (!avl_irq_n);
-    #20000 assert (avl_irq_n);
+    #40000 assert (avl_irq);
+    #20000 avl_read = 1'b1;
+    #20000 assert(!avl_irq);
+    avl_read = 1'b0;
+
     switches = 4'b0000;
-    #20000 assert (!avl_irq_n);
-    #20000 assert (avl_irq_n);
+    #40000 assert (avl_irq);
+    #20000 avl_read = 1'b1;
+    #20000 assert(!avl_irq);
+    avl_read = 1'b0;
 
     keys = 4'b1101;
-    #20000 assert (!avl_irq_n);
-    #20000 assert (avl_irq_n);
+    #40000 assert (avl_irq);
+    #20000 avl_read = 1'b1;
+    #20000 assert(!avl_irq);
+    avl_read = 1'b0;
+
     keys = 4'b1111;
-    #20000 assert (!avl_irq_n);
-    #20000 assert (avl_irq_n);
+    #40000 assert (avl_irq);
+    #20000 avl_read = 1'b1;
+    #20000 assert(!avl_irq);
+    avl_read = 1'b0;
 end
 
 endmodule
