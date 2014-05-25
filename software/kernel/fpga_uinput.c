@@ -22,6 +22,7 @@ static DECLARE_WAIT_QUEUE_HEAD(interrupt_wq);
 
 static int interrupt_flag = 0;
 static DEFINE_SPINLOCK(interrupt_flag_lock);
+static uint8_t input_state;
 
 static irqreturn_t fpga_uinput_interrupt(int irq, void *dev_id)
 {
@@ -30,6 +31,7 @@ static irqreturn_t fpga_uinput_interrupt(int irq, void *dev_id)
 
 	spin_lock(&interrupt_flag_lock);
 	interrupt_flag = 1;
+	input_state = ioread8(fpga_uinput_mem);
 	spin_unlock(&interrupt_flag_lock);
 
 	wake_up_interruptible(&interrupt_wq);
@@ -58,7 +60,7 @@ static ssize_t fpga_uinput_show(struct device_driver *drv, char *buf)
 	interrupt_flag = 0;
 	spin_unlock(&interrupt_flag_lock);
 
-	buf[0] = ioread8(fpga_uinput_mem);
+	buf[0] = input_state;
 	ret = 1;
 
 release_and_exit:
@@ -88,11 +90,6 @@ static int __init fpga_uinput_init(void)
 	if (ret < 0)
 		goto fail_create_file;
 
-	ret = request_irq(UINPUT_INT_NUM, fpga_uinput_interrupt,
-			0, "fpga_uinput", NULL);
-	if (ret < 0)
-		goto fail_request_irq;
-
 	res = request_mem_region(UINPUT_BASE, UINPUT_SIZE, "fpga_uinput");
 	if (res == NULL) {
 		ret = -EBUSY;
@@ -105,15 +102,18 @@ static int __init fpga_uinput_init(void)
 		goto fail_ioremap;
 	}
 
-	pr_info("Initialized FPGA user input driver\n");
+	ret = request_irq(UINPUT_INT_NUM, fpga_uinput_interrupt,
+			0, "fpga_uinput", NULL);
+	if (ret < 0)
+		goto fail_request_irq;
 
 	return 0;
 
+fail_request_irq:
+	iounmap(fpga_uinput_mem);
 fail_ioremap:
 	release_mem_region(UINPUT_BASE, UINPUT_SIZE);
 fail_request_mem:
-	free_irq(UINPUT_INT_NUM, NULL);
-fail_request_irq:
 	driver_remove_file(&fpga_uinput_driver, &driver_attr_fpga_uinput);
 fail_create_file:
 	driver_unregister(&fpga_uinput_driver);
@@ -123,9 +123,9 @@ fail_driver_register:
 
 static void __exit fpga_uinput_exit(void)
 {
+	free_irq(UINPUT_INT_NUM, NULL);
 	iounmap(fpga_uinput_mem);
 	release_mem_region(UINPUT_BASE, UINPUT_SIZE);
-	free_irq(UINPUT_INT_NUM, NULL);
 	driver_remove_file(&fpga_uinput_driver, &driver_attr_fpga_uinput);
 	driver_unregister(&fpga_uinput_driver);
 }
